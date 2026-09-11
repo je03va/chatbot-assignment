@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "article-qa"
+version = "0.1.0"
+description = "Gemini-powered source-grounded Q&A with conversational memory and optional TTS."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "google-genai>=1.0.0",
+]
+authors = [{ name = "AI Assistant" }]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
