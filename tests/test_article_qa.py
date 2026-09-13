@@ -36,6 +36,14 @@ class TestConversation(unittest.TestCase):
         self.assertIn("Article text here", prompt)
         self.assertIn("only from this source", prompt)
 
+    def test_build_system_prompt_strips_markdown_formatting(self):
+        prompt = build_system_prompt("# First article\n\n**Traditional Algorithms Tested:**\n- FCFS\n- Max-Min\n\nRL is proposed.")
+        self.assertNotIn("#", prompt)
+        self.assertNotIn("**", prompt)
+        self.assertNotIn("- FCFS", prompt)
+        self.assertIn("First article", prompt)
+        self.assertIn("RL is proposed", prompt)
+
     def test_session_tracks_history(self):
         session = ConversationSession("Article text here")
         session.ask("What is the main point?")

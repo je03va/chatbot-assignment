@@ -10,6 +10,8 @@ from typing import Callable
 
 from gtts import gTTS
 
+from article_qa.conversation import strip_markdown
+
 
 def gtts_synthesizer(text: str) -> bytes:
     """Synthesize text using gTTS (Google Text-to-Speech).
@@ -17,7 +19,7 @@ def gtts_synthesizer(text: str) -> bytes:
     Returns audio in MP3 format as bytes.
     """
     buffer = io.BytesIO()
-    gTTS(text=text, lang="en").write_to_fp(buffer)
+    gTTS(text=strip_markdown(text), lang="en").write_to_fp(buffer)
     buffer.seek(0)
     return buffer.getvalue()
 
@@ -32,7 +34,7 @@ class TTSEngine:
     def synthesize(self, text: str) -> bytes:
         if not text or not text.strip():
             raise ValueError("Text for TTS cannot be empty.")
-        return self.synthesizer(text)
+        return self.synthesizer(strip_markdown(text))
 
     def play(self, audio: bytes) -> None:
         """Play generated audio without persisting a repo-level output file."""

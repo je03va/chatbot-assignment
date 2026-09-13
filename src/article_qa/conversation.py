@@ -1,17 +1,36 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
 
-SYSTEM_PROMPT_TEMPLATE = """You are an expert on the following material. Answer questions accurately and only from this source, citing specifics where relevant. Here is the source text:
+SYSTEM_PROMPT_TEMPLATE = """You are a careful research assistant helping a user understand the provided source material. Answer questions only from this source, and stay grounded in what it actually says. When useful, transform the material into clear, conversational explanations, concise summaries, comparisons, and practical takeaways in plain spoken English. Do not invent facts, add outside knowledge, or speculate beyond the source. If the text does not answer a question directly, say so plainly and avoid guessing. Keep the tone natural, helpful, and easy to follow, with no markdown headings, bullet lists, bold markers, or other formatting.
+
+Source text:
 
 {source_text}
 """
 
 
+def strip_markdown(text: str) -> str:
+    """Normalize source text and spoken output into plain prose."""
+    if text is None:
+        return ""
+
+    cleaned = str(text)
+    cleaned = re.sub(r"^#{1,6}\s*", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"^\s*[-*+]\s+", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"^\s*\d+\.\s+", "", cleaned, flags=re.MULTILINE)
+    cleaned = re.sub(r"\*\*|__|~~|`", "", cleaned)
+    cleaned = re.sub(r"\[(.*?)\]\((.*?)\)", r"\1", cleaned)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    cleaned = cleaned.replace("\r\n", "\n").replace("\r", "\n")
+    return cleaned.strip()
+
+
 def build_system_prompt(source_text: str) -> str:
-    cleaned = (source_text or "").strip()
+    cleaned = strip_markdown(source_text or "")
     if not cleaned:
         raise ValueError("Source text cannot be empty.")
     return SYSTEM_PROMPT_TEMPLATE.format(source_text=cleaned)
@@ -23,7 +42,7 @@ class ConversationSession:
     messages: list[dict[str, str]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
-        self.source_text = (self.source_text or "").strip()
+        self.source_text = strip_markdown(self.source_text or "").strip()
         if not self.source_text:
             raise ValueError("Source text cannot be empty.")
 
