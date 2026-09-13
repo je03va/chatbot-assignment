@@ -1,18 +1,23 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 from article_qa.conversation import ConversationSession
 from article_qa.gemini_client import GeminiChatClient
 from article_qa.ingest import load_article_text, normalize_articles
 from article_qa.tts import TTSEngine
 
+load_dotenv()
+
 
 def _run_chat(source_text: str, question: str, *, api_key: str | None = None, speak: bool = False) -> tuple[str, bytes | None]:
     session = ConversationSession(source_text)
     session.ask(question)
-    client = GeminiChatClient(api_key=api_key)
+    client = GeminiChatClient(api_key=api_key or os.getenv("GEMINI_API_KEY"))
     payload = session.build_gemini_payload()
     response = client.generate(payload["system_instruction"], payload["contents"])
     session.record_answer(response)
@@ -21,6 +26,7 @@ def _run_chat(source_text: str, question: str, *, api_key: str | None = None, sp
     if speak:
         engine = TTSEngine()
         audio = engine.synthesize(response)
+        engine.play(audio)
 
     return response, audio
 
@@ -44,9 +50,7 @@ def main() -> None:
     response, audio = _run_chat(source_text, args.question, api_key=args.api_key, speak=args.speak)
     print(response)
     if args.speak and audio is not None:
-        output_path = Path("output.wav")
-        output_path.write_bytes(audio)
-        print(f"Saved spoken output to {output_path.resolve()}.")
+        print("Playing spoken output...")
 
 
 if __name__ == "__main__":
